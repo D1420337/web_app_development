@@ -1,97 +1,89 @@
-# 系統架構設計：線上算命系統
+# 系統架構設計 (System Architecture)
 
 ## 1. 技術架構說明
 
-本專案採用伺服器端渲染（Server-Side Rendering, SSR）架構，不進行前後端分離，以保持架構單純，適合快速開發與驗證 MVP（最小可行性產品）。
+本專案採用經典的伺服器端渲染 (Server-Side Rendering, SSR) 架構，而非單純的前後端分離。透過輕量級的後端框架與模板引擎，能以最簡單且有效率的方式達成我們的產品需求。
 
-- **選用技術與原因**：
-  - **後端：Python + Flask**。Flask 是一個輕量級的網頁框架，學習曲線平緩，非常適合用來快速建立只有少數路由與功能的小型系統。
-  - **模板引擎：Jinja2**。內建於 Flask 中，可以直接在 HTML 中寫入 Python 變數與邏輯（如迴圈、條件判斷），快速實現動態網頁渲染。
-  - **資料庫：SQLite**。這是一個輕量級的關聯式資料庫，不需要額外架設伺服器，資料儲存在單一檔案中，非常適合初期的使用者紀錄與香油錢捐獻紀錄。
+**選用技術與原因：**
+- **後端：Python + Flask**。Flask 是一個極輕量且具備高彈性的 Python Web 框架，適合用來快速開發中小型網頁應用，設定簡單且內建許多好用的開發工具，十分符合此專案 MVP 的需求。
+- **模板引擎：Jinja2**。Flask 內建整合的 Jinja2 模板引擎，可以讓我們在 HTML 頁面中混入 Python 變數與邏輯（例如透過迴圈來顯示食譜清單），頁面會由 Flask 後端先渲染完成後，再回傳給瀏覽器顯示。
+- **資料庫：SQLite**。SQLite 是一個單一檔案型的關聯式資料庫系統，無需額外安裝或設定資料庫伺服器環境就能運作，非常便於開發與測試。我們會透過 Python 內建的 `sqlite3` 或 ORM (如 SQLAlchemy) 進行操作。
 
-- **Flask MVC 模式說明**：
-  - **Model（模型）**：負責與資料庫（SQLite）溝通。例如定義 `User`（使用者）與 `History`（算命紀錄）等資料表結構，並處理資料的新增、查詢。
-  - **View（視圖）**：負責畫面呈現，由 Jinja2 搭配 HTML/CSS/JS 構成。用來呈現抽籤結果、捐獻表單與歷史紀錄畫面。
-  - **Controller（控制器）**：由 Flask 的路由 (`routes`) 擔任。負責接收來自使用者的 Request（如點擊抽籤、註冊會員、送出捐獻表單），調用 Model 去要資料，最後把資料傳給 View 來產生畫面回傳給使用者。
+**Flask MVC 模式說明：**
+本專案會參考 MVC（Model-View-Controller）的分層概念進行應用組織：
+- **Model (資料模型)：** 負責定義資料庫的表格結構與資料操作邏輯。在此專案中包含「使用者」與「食譜 (含食材、作法)」的儲存架構。
+- **View (視圖)：** 負責呈現使用者介面。此部分即為由 Jinja2 引擎根據資料渲染出來的 HTML 模板，負責所有畫面呈現 (`templates/` 目錄)。
+- **Controller (控制器)：** 在 Flask 中主要實作為「路由 (Routes)」。負責接收使用者的要求 (Request)，拿取或寫入資料庫模型 (Model) 資料，最後再將資料送到 View (Jinja2 模板) 中並回傳結果給使用者。
+
+---
 
 ## 2. 專案資料夾結構
 
-以下是專案預計的資料夾結構，每個目錄與檔案皆有明確的職責劃分：
+我們建議的資料夾結構如下，以明確分離關注點，方便未來專案擴充：
 
 ```text
 web_app_development/
-├── app/
-│   ├── models/             ← 資料庫模型 (Models)
-│   │   ├── __init__.py
-│   │   ├── user.py         ← 會員資料表定義 (處理註冊登入)
-│   │   └── record.py       ← 算命紀錄與捐獻紀錄資料表定義
-│   ├── routes/             ← Flask 路由 (Controllers)
-│   │   ├── __init__.py
-│   │   ├── main.py         ← 首頁與算命/抽籤的核心路由
-│   │   ├── auth.py         ← 註冊、登入與登出路由
-│   │   └── api.py          ← (可選) 處理前端 AJAX 請求，像是香油錢捐獻 API
-│   ├── templates/          ← Jinja2 HTML 模板 (Views)
-│   │   ├── base.html       ← 共用模板（包含標頭、導覽列、頁尾）
-│   │   ├── index.html      ← 首頁/算命介面
-│   │   ├── result.html     ← 抽籤/算命結果顯示頁面
-│   │   ├── history.html    ← 會員中心與歷史紀錄頁面
-│   │   ├── donate.html     ← 香油錢捐獻頁面
-│   │   └── auth/           ← 身份驗證相關視圖
-│   │       ├── login.html
-│   │       └── register.html
-│   └── static/             ← CSS / JS 等靜態資源
-│       ├── css/
-│       │   └── style.css   ← 全站共用樣式 (如需客製化或擴充 Tailwind)
-│       ├── js/
-│       │   └── custom.js   ← 處理抽籤動畫等前端互動腳本
-│       └── images/         ← 籤筒、擲筊、籤詩圖片等
-├── instance/
-│   └── database.db         ← SQLite 資料庫 (存放實際資料，不進版本控制)
-├── docs/                   ← 專案設計文件 (PRD, 架構文件等)
-├── .gitignore              ← Git 忽略檔案設定
-├── app.py                  ← 專案入口檔 (初始化 Flask App)
-└── requirements.txt        ← Python 套件依賴清單
+├── app/                      # 應用程式主程式碼目錄
+│   ├── models/               # [Model] 資料庫模型定義與操作邏輯
+│   │   ├── user.py           # 使用者資料表模型
+│   │   └── recipe.py         # 食譜（含食材、步驟）的模型
+│   ├── routes/               # [Controller] 負責提供 Flask 路由
+│   │   ├── auth.py           # 帳號機制（登入、註冊模組）
+│   │   ├── recipe.py         # 食譜主體操作（新增、清單、搜尋）
+│   │   └── admin.py          # 後台管理功能路由
+│   ├── templates/            # [View] 存放 Jinja2 HTML 模板
+│   │   ├── base.html         # 母版（含共用的頂端導覽列、頁尾、載入資源）
+│   │   ├── index.html        # 首頁（顯示食譜列表）
+│   │   ├── detail.html       # 食譜詳細頁面介紹
+│   │   └── form.html         # 新增/編輯食譜的表單頁面
+│   └── static/               # 靜態資源檔案目錄
+│       ├── css/              # 網頁樣式表 (style.css)
+│       └── js/               # 前端腳本檔案
+├── docs/                     # 專案說明文件目錄
+│   ├── PRD.md                # 產品需求文件
+│   └── ARCHITECTURE.md       # 本文件：系統架構設計
+├── instance/                 # Flask 預設保護資源的資料夾
+│   └── database.db           # SQLite 資料庫檔案
+├── requirements.txt          # Python 依賴的第三方套件清單
+└── app.py                    # Flask 應用程式的進入點 (Entry Point)
 ```
+
+---
 
 ## 3. 元件關係圖
 
-以下展示使用者從瀏覽器發出請求，到系統處理並回傳畫面的完整流程（MVC 資料流）：
+以下透過圖表展示系統收到使用者操作（如：查看某個食譜）的運作流程：
 
 ```mermaid
-graph TD
-    %% 定義節點
-    Browser(瀏覽器 - 使用者)
-    
-    subgraph Flask Application
-        Route[Flask Route<br>Controller]
-        Model[Model<br>Database Logic]
-        Template[Jinja2 Template<br>View]
-    end
-    
-    DB[(SQLite<br>Database)]
+sequenceDiagram
+    participant B as 瀏覽器 (Browser)
+    participant R as Flask 路由 (Controller)
+    participant M as 資料庫模型 (Model)
+    participant DB as SQLite 資料庫
+    participant T as Jinja2 模板 (View)
 
-    %% 流程線
-    Browser -- "1. 發出 HTTP Request (如點擊抽籤)" --> Route
-    Route -- "2. 要求查詢或寫入紀錄" --> Model
-    Model -- "資料讀寫" --> DB
-    Model -. "3. 回傳資料物件" .-> Route
-    Route -- "4. 傳遞變數給視圖渲染" --> Template
-    Template -. "5. 生成完整 HTML" .-> Route
-    Route -. "6. 回傳 HTTP Response (HTML)" .-> Browser
-
-    %% 樣式設定
-    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;
-    classDef highlight fill:#d4edda,stroke:#28a745,stroke-width:2px;
-    class Route,Model,Template highlight;
+    B->>R: 1. 發送 HTTP 請求 (如 GET /recipe/1)
+    R->>M: 2. 要求拿取對應的食譜資料
+    M->>DB: 3. 執行 SQL 查詢語法
+    DB-->>M: 4. 回傳資料庫儲存紀錄
+    M-->>R: 5. 解析紀錄成為資料物件
+    R->>T: 6. 將資料傳遞給食譜詳細頁 (detail.html)
+    T-->>R: 7. 渲染完成最終的 HTML 內容
+    R-->>B: 8. 回覆 HTTP Response 顯示於畫面
 ```
+
+---
 
 ## 4. 關鍵設計決策
 
-1. **不分離前後端，採用 Jinja2 直接渲染頁面**
-   - **原因**：考量到這是一個以內容呈現與表單遞交為主的 MVP 專案，採用伺服器端渲染能省去前端框架設置以及 API 串接等跨域 (CORS) 複雜度，開發速度更快，也可以更容易處理 SEO（若未來有需要）。
-2. **利用 Flask Blueprints 按功能拆分路由**
-   - **原因**：為了避免所有的功能（算命、登入、捐款）都混雜在同一個 `app.py` 中，我們在 `routes/` 資料夾下利用 Blueprint 切分不同的負責範圍（例如 `main.py`, `auth.py`）。這樣可以保持程式碼整潔，方便未來擴充或除錯。
-3. **資料庫單純化，採用 SQLite**
-   - **原因**：系統初期主要需要記錄「會員帳號」與「過去抽籤結果」，資料量與併發數不大。選用 SQLite 不需要額外架設資料庫伺服器，且在 Python 內建支援極佳，備份也非常容易（只要拷貝一個 .db 檔案）。
-4. **抽籤/擲筊等動畫效果交由前端 JavaScript 實作**
-   - **原因**：互動動畫（例如搖晃籤筒、丟擲筊杯）是不需要頻繁往返後端邏輯的視覺效果。為確保畫面流暢自然，這些互動將在前端使用純 JavaScript 及 CSS 動畫負責，直到結果出爐才與後端通訊（例如儲存紀錄或判斷邏輯），減少伺服器負載。
+1. **採用伺服器端渲染 (SSR) 而非前後端分離**
+   - **原因**：考量此專案重點在於食譜資訊呈現，不需太頻繁的無刷新介面互動。以 Flask + Jinja2 產出 HTML，可大幅減少初期開發負擔並加快專案上線速度，維護也只需專注在單一程式碼庫中。
+
+2. **路由邏輯按模組化拆分 (Blueprints)**
+   - **原因**：將不同的權限或功能拆分成獨立的 `route`（例如：一般使用者操作歸在 `recipe.py`，管理員相關在 `admin.py`），而不是全部擠在 `app.py` 中。這能讓程式碼變得好讀與易於維護擴充。
+
+3. **統一共用模板架構 (`base.html`)**
+   - **原因**：所有內部頁面（首頁、詳細頁、新增頁等）透過 Jinja2 模板繼承，重複利用包含主要網頁架構與外觀資源的 `base.html`，減少重複程式碼，確保網站上下的視覺呈現一致性。
+
+4. **採用 SQLite 解決方案**
+   - **原因**：對於初期 MVP 專案，單一檔案即資料庫有極好的開發體驗，並省下網路連線配置的繁瑣程序。若未來流量成長，程式層可憑藉 Python ORM 介面快速搬移到 PostgreSQL 等更強大的資料庫中。
