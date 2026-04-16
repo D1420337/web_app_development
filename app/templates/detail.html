@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 col-lg-8 mx-auto">
+        <div class="card shadow-sm border-0 overflow-hidden">
+            {% if recipe.image_url %}
+            <img src="{{ recipe.image_url }}" class="card-img-top" alt="{{ recipe.title }}" style="max-height: 400px; object-fit: cover;">
+            {% endif %}
+            
+            <div class="card-body p-4 p-md-5">
+                <h1 class="card-title fw-bold mb-3">{{ recipe.title }}</h1>
+                
+                <div class="d-flex align-items-center mb-4 text-muted border-bottom pb-3">
+                    <span class="me-3"><small>發佈時間: {{ recipe.created_at[:16] }}</small></span>
+                    {% if recipe.updated_at != recipe.created_at %}
+                    <span><small>更新時間: {{ recipe.updated_at[:16] }}</small></span>
+                    {% endif %}
+                </div>
+                
+                {% if recipe.description %}
+                <div class="lead mb-4 p-3 bg-light rounded text-secondary fst-italic">
+                    "{{ recipe.description }}"
+                </div>
+                {% endif %}
+                
+                <h4 class="mt-4 fw-bold text-primary mb-3">所需食材</h4>
+                <div class="bg-light p-4 rounded mb-5" style="white-space: pre-wrap; font-size: 1.1rem;">{{ recipe.ingredients }}</div>
+                
+                <h4 class="mt-4 fw-bold text-primary mb-3">料理步驟</h4>
+                <div class="p-4 rounded border" style="white-space: pre-wrap; font-size: 1.1rem; line-height: 1.8;">{{ recipe.steps }}</div>
+            </div>
+            
+            {% if session.get('user_id') == recipe.user_id or session.get('role') == 'admin' %}
+            <div class="card-footer bg-white border-top p-4 d-flex justify-content-end align-items-center">
+                <a href="{{ url_for('recipe.update', recipe_id=recipe.id) }}" class="btn btn-outline-primary px-4 me-3">編輯食譜</a>
+                <form action="{{ url_for('recipe.delete', recipe_id=recipe.id) }}" method="POST" class="m-0" onsubmit="return confirm('確定要永久刪除此食譜嗎？此動作無法復原！');">
+                    <button type="submit" class="btn btn-danger px-4">刪除</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="mt-4 text-center">
+            <a href="{{ url_for('recipe.index') }}" class="text-decoration-none">&larr; 返回食譜列表</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

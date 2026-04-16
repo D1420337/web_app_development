@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="fw-bold">{% if search_query %}「{{ search_query }}」搜尋結果{% else %}最新食譜{% endif %}</h2>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for recipe in recipes %}
+    <div class="col">
+        <div class="card h-100 shadow-sm border-0 border-top border-primary border-3">
+            {% if recipe.image_url %}
+            <img src="{{ recipe.image_url }}" class="card-img-top" alt="{{ recipe.title }}" style="height: 200px; object-fit: cover;">
+            {% else %}
+            <div class="card-img-top bg-light text-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
+                <span><i class="bi bi-camera"></i> 無預覽圖片</span>
+            </div>
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title fw-bold text-truncate">{{ recipe.title }}</h5>
+                <p class="card-text text-muted" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                    {{ recipe.description|default('無詳細簡介', true) }}
+                </p>
+                <a href="{{ url_for('recipe.detail', recipe_id=recipe.id) }}" class="btn btn-outline-primary btn-sm stretched-link">查看總覽 &rarr;</a>
+            </div>
+            <div class="card-footer bg-white border-0 text-muted small d-flex justify-content-between">
+                <span>建立: {{ recipe.created_at[:10] }}</span>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-light text-center py-5 border rounded shadow-sm text-muted">
+            <h4 class="mb-3">找不到任何食譜</h4>
+            <p>目前資料庫空空如也，馬上點擊下方按鈕新增你的第一份食譜吧！</p>
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('recipe.create') }}" class="btn btn-primary mt-2">建立食譜</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

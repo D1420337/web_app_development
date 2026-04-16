@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 col-lg-8 mx-auto">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white py-3">
+                <h4 class="mb-0 fw-bold">{% if recipe %}編輯食譜{% else %}建立新食譜{% endif %}</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-4">
+                        <label for="title" class="form-label fw-bold">食譜名稱 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-lg" id="title" name="title" value="{{ recipe.title if recipe else request.form.get('title', '') }}" required placeholder="例如: 義式番茄肉醬麵">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="description" class="form-label fw-bold">簡介</label>
+                        <textarea class="form-control" id="description" name="description" rows="2" placeholder="簡單介紹這道菜的味道或由來...">{{ recipe.description if recipe else request.form.get('description', '') }}</textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="ingredients" class="form-label fw-bold">所需食材 <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="ingredients" name="ingredients" rows="5" required placeholder="請列出所有食材及其份量，每行一個食材...">{{ recipe.ingredients if recipe else request.form.get('ingredients', '') }}</textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="steps" class="form-label fw-bold">料理步驟 <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="steps" name="steps" rows="8" required placeholder="詳細記錄料理步驟...&#10;1. 備料...&#10;2. 下鍋...">{{ recipe.steps if recipe else request.form.get('steps', '') }}</textarea>
+                    </div>
+                    
+                    <div class="mb-5">
+                        <label for="image_url" class="form-label fw-bold">封面圖片網址 (選填)</label>
+                        <input type="url" class="form-control" id="image_url" name="image_url" value="{{ recipe.image_url if recipe else request.form.get('image_url', '') }}" placeholder="https://...">
+                        <div class="form-text">貼上網路上圖片的直接連結網址，讓食譜列表更美觀。</div>
+                    </div>
+                    
+                    <div class="d-grid gap-3 d-md-flex justify-content-md-end border-top pt-4">
+                        {% if recipe %}
+                        <a href="{{ url_for('recipe.detail', recipe_id=recipe.id) }}" class="btn btn-outline-secondary px-4">取消</a>
+                        {% else %}
+                        <a href="{{ url_for('recipe.index') }}" class="btn btn-outline-secondary px-4">取消</a>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary px-5 fw-bold">儲存食譜</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
