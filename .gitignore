@@ -13,3 +13,8 @@ instance/
 *.db
 *.sqlite
 *.sqlite3
+.venv/
+__pycache__/
+instance/
+cookies.txt
+*.pyc

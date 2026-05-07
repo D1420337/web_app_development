@@ -8,7 +8,7 @@ def index():
     首頁/書籍列表。
     GET: 取得所有上架書籍，支援搜尋與過濾，渲染 index.html。
     """
-    pass
+    return render_template('book/index.html')
 
 @book_bp.route('/book/create', methods=['GET', 'POST'])
 def create():
