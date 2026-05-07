@@ -1,59 +1,68 @@
-# 路由設計文件 (Route Design)
-
-本文件定義「食譜收藏夾系統」的 API 路由與頁面規劃，包含使用者認證、食譜主要功能及管理員功能。
+# 二手書交換平台系統 - 路由與頁面規劃文件 (Routes Design)
 
 ## 1. 路由總覽表格
 
-| 模組 | 功能 | HTTP 方法 | URL 路徑 | 對應模板 | 說明 |
-|---|---|---|---|---|---|
-| 認證 | 註冊頁面 | GET | `/auth/register` | `auth/register.html` | 顯示註冊表單 |
-| 認證 | 處理註冊 | POST | `/auth/register` | — | 接收表單存入DB，成功則重導向至登入頁 |
-| 認證 | 登入頁面 | GET | `/auth/login` | `auth/login.html` | 顯示登入表單 |
-| 認證 | 處理登入 | POST | `/auth/login` | — | 驗證帳密，成功設session重導向至首頁 |
-| 認證 | 登出 | GET | `/auth/logout` | — | 清除session，重導向至首頁 |
-| 食譜 | 首頁/食譜清單 | GET | `/` 或 `/recipes` | `index.html` | 顯示所有食譜縮圖或列表清單 |
-| 食譜 | 搜尋食譜 | GET | `/recipes/search` | `index.html` | 依據 `?q=` 參數過濾並回傳食譜清單 |
-| 食譜 | 新增食譜頁面 | GET | `/recipes/new` | `form.html` | 呈現空白的食譜輸入表單 |
-| 食譜 | 處理新增 | POST | `/recipes/new` | — | 將表單資料存入DB，成功則重導向詳情頁 |
-| 食譜 | 食譜詳細頁面 | GET | `/recipes/<id>` | `detail.html` | 呈現單一食譜畫面的詳細資料 |
-| 食譜 | 編輯食譜頁面 | GET | `/recipes/<id>/edit` | `form.html` | 呈現帶有原始資料的編輯表單 |
-| 食譜 | 處理編輯 | POST | `/recipes/<id>/edit` | — | 更新特定食譜，成功重導向詳情頁 |
-| 食譜 | 處理刪除 | POST | `/recipes/<id>/delete`| — | 刪除紀錄，成功重導向至首頁 |
-| 管理 | 後台首頁 | GET | `/admin/` | `admin/dashboard.html` | (Nice-to-have) 呈現系統數據或首頁 |
-| 管理 | 使用者管理 | GET | `/admin/users` | `admin/users.html` | (Nice-to-have) 管理平台上所有用戶 |
+| 功能模組 | 功能 | HTTP 方法 | URL 路徑 | 對應模板 | 說明 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Auth** | 註冊頁面 | GET | `/auth/register` | `templates/auth/register.html` | 顯示註冊表單 |
+| **Auth** | 處理註冊 | POST | `/auth/register` | — | 接收表單，寫入 User，重導向至登入 |
+| **Auth** | 登入頁面 | GET | `/auth/login` | `templates/auth/login.html` | 顯示登入表單 |
+| **Auth** | 處理登入 | POST | `/auth/login` | — | 驗證帳密，設定 Session，重導向至首頁 |
+| **Auth** | 登出 | GET | `/auth/logout` | — | 清除 Session，重導向至首頁 |
+| **Book** | 首頁/書籍列表 | GET | `/` | `templates/book/index.html` | 顯示所有上架書籍列表，支援搜尋與分類 |
+| **Book** | 新增書籍頁面 | GET | `/book/create` | `templates/book/create.html` | 顯示上架二手書表單 |
+| **Book** | 建立書籍 | POST | `/book/create` | — | 接收表單，寫入 Book，重導向至個人書櫃 |
+| **Book** | 書籍詳情 | GET | `/book/<id>` | `templates/book/detail.html` | 顯示單筆書籍詳細資訊與公開留言 |
+| **Book** | 編輯書籍頁面 | GET | `/book/<id>/edit` | `templates/book/edit.html` | 顯示編輯表單 (僅限擁有者) |
+| **Book** | 更新書籍 | POST | `/book/<id>/update` | — | 更新 Book 資訊，重導向至書籍詳情 |
+| **Book** | 刪除書籍 | POST | `/book/<id>/delete` | — | 刪除 Book，重導向至個人書櫃 |
+| **User** | 個人書櫃(Dashboard) | GET | `/user/dashboard` | `templates/user/dashboard.html` | 顯示我的上架、預約狀態 |
+| **Request** | 發送預約請求 | POST | `/book/<id>/request` | — | 買家點擊預約，寫入 Request |
+| **Request** | 處理預約請求 | POST | `/request/<id>/action` | — | 賣家接受或拒絕，更新 Request 狀態 |
+| **Message**| 新增留言 | POST | `/book/<id>/message` | — | 寫入公開留言 |
+| **Message**| 私訊對話頁面 | GET | `/message/<user_id>` | `templates/user/messages.html` | 顯示與特定使用者的私訊紀錄 |
+| **Message**| 傳送私訊 | POST | `/message/<user_id>/send` | — | 寫入私訊，重導向回對話頁面 |
 
 ## 2. 每個路由的詳細說明
 
-### 認證 (`app/routes/auth.py`)
-- **GET `/auth/register`**：不需要輸入，無參數。直接渲染 `auth/register.html`。
-- **POST `/auth/register`**：輸入為表單欄位 `username`, `password`。將呼叫 `User.create`。成功後重導向至登入頁。若失敗 (如帳號重複)，閃現(flash)錯誤訊息。
-- **GET `/auth/login`**：不需要輸入。直接渲染 `auth/login.html`。
-- **POST `/auth/login`**：輸入為 `username`, `password`。驗證 hash 後寫入 session。成功重導向首頁，失敗則閃現錯誤訊息。
-- **GET `/auth/logout`**：呼叫 `session.clear()` 登出，並導回首頁。
+*(這裡簡述幾個核心路由的邏輯，詳細可參考程式碼註解)*
 
-### 食譜 (`app/routes/recipe.py`)
-- **GET `/` 及 `/recipes`**：查詢並呼叫 `Recipe.get_all()`。輸出內容傳遞至 `index.html` 渲染。
-- **GET `/recipes/search`**：接收 URL 參數 `q`。呼叫 `Recipe.search(q)`。回傳到 `index.html` 渲染搜尋結果。
-- **GET `/recipes/new`**：需要登入。渲染 `form.html` (此表單沒有預先填值)。
-- **POST `/recipes/new`**：需要登入。接收表單欄位 `title`, `description`, `ingredients`, `steps`, `image_url`。儲存至資料庫後將重新導向至 `/recipes/<id>`。
-- **GET `/recipes/<id>`**：接收 `<int:id>` 參數。如果資料庫找不到，返回 HTTP 404 錯誤頁面。否則回傳帶有資料的 `detail.html`。
-- **GET `/recipes/<id>/edit`**：需要等同於原作者的登入與權限檢查。接收 `<int:id>` 參數。回傳 `form.html` 且表單包含該食譜的所有資料供使用者更改。找不到返回 404 錯誤。
-- **POST `/recipes/<id>/edit`**：更新該 ID 對應的資料實體，完成後帶出成功訊息並導回該食譜詳細頁面。
-- **POST `/recipes/<id>/delete`**：自資料庫刪除紀錄並重導向首頁，執行前需確認權限與驗證使用者登入。
+### `/book/create` (POST)
+- **輸入**：表單欄位 (`title`, `author`, `course_name`, `department`, `condition`, `price`)
+- **處理邏輯**：
+  1. 檢查使用者是否已登入 (Session)。
+  2. 驗證必填欄位。
+  3. 呼叫 `Book.create()` 寫入資料庫。
+- **輸出**：`flash` 成功訊息，`redirect` 到 `/user/dashboard`。
+- **錯誤處理**：資料驗證失敗則 `flash` 錯誤，重新 `render_template` `book/create.html` 並保留輸入值。
 
-### 管理 (`app/routes/admin.py`) 
-- **GET `/admin/` 與 `/admin/users`**：此功能模組需要自訂裝飾器驗證用戶是否已登入且有最高管理員權限 (例如檢查 `session` 與 `role == 'admin'`)。若無權限則回傳 HTTP 403 拒絕存取。
+### `/book/<id>` (GET)
+- **輸入**：URL 參數 `book_id`
+- **處理邏輯**：
+  1. 呼叫 `Book.get_by_id()`。
+  2. 呼叫 `Message.get_by_book()` 取得該書留言。
+  3. 呼叫 `User.get_by_id()` 取得賣家資訊。
+- **輸出**：`render_template` `book/detail.html` 並傳遞變數。
+- **錯誤處理**：若書本不存在，回傳 404 頁面。
 
-## 3. Jinja2 模板規劃清單
+### `/request/<id>/action` (POST)
+- **輸入**：表單隱藏欄位 `action` (accept 或 reject)
+- **處理邏輯**：
+  1. 檢查目前登入者是否為該書的賣家。
+  2. 呼叫 `Request.update_status()` 更新狀態。
+  3. 若為 accept，同步更新書本狀態 (`Book.update_status()`) 為 reserved/sold。
+- **輸出**：`redirect` 到 `/user/dashboard`。
 
-共用母版：
-- `base.html`: 負責引入共用的 CSS / JS 外觀元件，包含網站導覽列 (Navbar) 選單、頁尾註腳 (Footer) 和錯誤訊息的呈現框 (Flash area)。
+## 3. Jinja2 模板清單
 
-所有其他頁面皆透過 Jinja2 繼承 `base.html`，以達到一致性的呈現：
-- `index.html` (適用於首頁、食譜分類列表、搜尋結果頁)
-- `detail.html` (食譜詳細作法與食材的展示頁)
-- `form.html` (共用於新增與編輯同一套輸入表單格式)
-- `auth/login.html` (登入畫面專屬頁面)
-- `auth/register.html` (註冊帳號專屬頁面)
-- `admin/dashboard.html` (後台首頁 - 此為未來擴充預留)
-- `admin/users.html` (後台會員名單頁 - 此為未來擴充預留)
+所有的模板都將繼承自 `base.html`，以保持網站 Navbar 與 Footer 一致。
+
+- `templates/base.html`: 共用版型。
+- `templates/auth/login.html`: 登入畫面。
+- `templates/auth/register.html`: 註冊畫面。
+- `templates/book/index.html`: 首頁，展示書籍卡片。
+- `templates/book/detail.html`: 書籍專屬頁面，包含留言區與預約按鈕。
+- `templates/book/create.html`: 上架書籍表單。
+- `templates/book/edit.html`: 編輯書籍表單。
+- `templates/user/dashboard.html`: 個人書櫃，使用頁籤 (Tabs) 切換「我的上架」、「我的預約」。
+- `templates/user/messages.html`: 私訊聊天室介面。
